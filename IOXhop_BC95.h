@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "IOXhop_BC95_Base.h"
+#include "Socket.h"
 
 #define DEBUG(...) { Serial.print("[debug] "); Serial.println(__VA_ARGS__); }
 
@@ -13,12 +14,16 @@ static String SetupCMD[3] = {
 	"AT+CGATT=1"
 };
 
-typedef void(*UDPReceiverCallback)(int, String, unsigned long, byte*, int);
+#define MAX_SOCKET 10
+static Socket* _SocketPointers[MAX_SOCKET];
+static int _SocketPointersIndex = 0;
 
 class IOXhop_BC95 : public IOXhop_BC95_Base {
 	public:
 		IOXhop_BC95() { }
-	
+		
+		void easySetup(bool showProcess = true) ;
+		
 		// Network
 		void begin() ;
 		bool reboot() ;
@@ -28,9 +33,8 @@ class IOXhop_BC95 : public IOXhop_BC95_Base {
 		bool isConnected() ;
 		
 		// UDP
-		int CreateUDPSocket(int listen_port) ;
-		bool SendUDP(int socket_id, String ip, unsigned long port, byte *data, int len) ;
-		void UDPReceiver(int socket_id, UDPReceiverCallback callback) ;
+		Socket* CreateUDPSocket(int listen_port) ;
+		void loop() ;
 		
 		
 }

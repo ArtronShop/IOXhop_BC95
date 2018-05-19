@@ -3,6 +3,26 @@
 
 #include "IOXhop_BC95.h"
 
+void IOXhop_BC95::easySetup(bool showProcess = true) {
+	this->begin();
+  
+	if (showProcess) Serial.println("Reboot module");
+	this->reboot();
+
+	if (showProcess) Serial.print("Try to setup");
+	while (!this->connect()) {
+		if (showProcess) Serial.print(".");
+	}
+	if (showProcess) Serial.println(" OK !");
+   
+	if (showProcess) Serial.print("Connect to network");
+	while (!this->isConnected()) {
+		if (showProcess) Serial.print(".");
+		delay(500);
+	}
+	if (showProcess) Serial.println(" Connected !");
+}
+
 void IOXhop_BC95::begin() {
 	IOXhop_BC95_Base::begin(); 
 }
@@ -18,7 +38,9 @@ bool IOXhop_BC95::reboot() {
 		#endif
 		return false;
 	}
-		
+	
+	delay(500);
+	/*
 	// Wait OK
 	if (!findOK(10000)) {
 		#ifdef DEBUG
@@ -26,11 +48,13 @@ bool IOXhop_BC95::reboot() {
 		#endif
 		return false;
 	}
+	*/
 	
 	return true;
 }
 
 bool IOXhop_BC95::connect() {
+/*
 	// wait module ready
 	unsigned long start = millis();
 	while(!testOnline() && (millis() - start) < 10000) {
@@ -46,11 +70,12 @@ bool IOXhop_BC95::connect() {
 		#endif
 		return false;
 	}
-	
+*/
+
 	if (isConnected()) return true;
 	
 	for (int i=0;i<SetupCMDLen;i++) {
-		if (!SendCMDfindOK(SetupCMD[i])) {
+		if (!SendCMDfindOK(SetupCMD[i], 500)) {
 			#ifdef DEBUG
 				DEBUG("Send " + SetupCMD[i] + " fail");
 			#endif
@@ -83,78 +108,41 @@ bool IOXhop_BC95::isConnected() {
 }
 
 // UDP
-int IOXhop_BC95::CreateUDPSocket(int listen_port) {
-	SendCMD("AT+NSOCR=DGRAM,17," + String(listen_port) + ",0");
+Socket* IOXhop_BC95::CreateUDPSocket(int listen_port) {
+	if (_SocketPointersIndex >= MAX_SOCKET) return NULL;
+	
+	SendCMD("AT+NSOCR=DGRAM,17," + String(listen_port) + ",1");
 	readString(0, 1000, "\r\n");
 	String ros = readString(1, 100);
-	if (!findOK()) return -1;
-	return ros.toInt();
+	if (!findOK()) return NULL;
+	_SocketPointers[_SocketPointersIndex++] = new Socket(this, ros.toInt());
+	return _SocketPointers[_SocketPointersIndex - 1];
 }
 
-bool IOXhop_BC95::SendUDP(int socket_id, String ip, unsigned long port, byte *data, int len) {
-	String cmd = "AT+NSOST=";
-	cmd += String(socket_id) + ",";
-	cmd += ip + ",";
-	cmd += String(port) + ",";
-	cmd += String(len) + ",";
-	String hexStr;
-	for (int i=0;i<len;i++) {
-		hexStr = String((int)data[i], HEX);
-		hexStr.toUpperCase();
-		cmd += hexStr;
-	}
-	SendCMD(cmd);
-	readString(0, 1000, "\r\n");
-	String ros;
-	ros = readString(0, 100, ",");
-	int SocketId = ros.substring(0, ros.length() - 1).toInt();
-	ros = readString(0, 100, "\r\n");
-	int rosLength = ros.substring(0, ros.length() - 2).toInt();
-	
-	if (SocketId != socket_id || rosLength != len) {
-		#ifdef DEBUG
-			DEBUG("Send " + cmd + " fail")
-			DEBUG(String(socket_id) + " -> " + String(SocketId));
-			DEBUG(String(len) + " -> " + String(rosLength));
-		#endif
-		return false;
-	}
-	
-	if (!findOK()) return false;
-	return true;
-}
-
-void IOXhop_BC95::UDPReceiver(int socket_id, UDPReceiverCallback callback) {
-	int SocketId = -1;
-	String ip;
-	unsigned long port = 0;
-	byte buffer[255];
-	int len = 0;
-	
-	SendCMD("AT+NSORF=" + String(socket_id) + ",255");
-	readString(0, 1000, "\r\n");
-	String ros = readString(0, 1000, "OK\r\n");
-	ros = ros.substring(0, ros.indexOf("OK\r\n"));
-	if (ros.length() > 0) {
-		String tmp[7];
-		int point = 0;
-		for (int i=0;i<ros.length()-4;i++) {
-			char c = ros.charAt(i);
-			if (c != ',')	
-				tmp[point] += (char)ros.charAt(i);
-			else
-				point++;
+void IOXhop_BC95::loop() {
+	while (IOXhop_BC95_Base::_ser->available() > 0) {
+		if (IOXhop_BC95_Base::_ser->read() == '+') {
+			if (find("NSONMI:", 100)) {
+				String ros;
+				ros = readString(0, 50, ",");
+				int incomeSocketId = ros.substring(0, ros.length() - 1).toInt();
+				ros = readString(0, 50, "\r\n");
+				int incomeLen = ros.substring(0, ros.length() - 2).toInt();
+				#ifdef DEBUG
+					DEBUG("incom Socket id: " + String(incomeSocketId) + ", len: " + String(incomeLen));
+				#endif
+				for (int i=0;i<_SocketPointersIndex;i++) {
+					Socket* soc = _SocketPointers[i];
+					if (incomeSocketId == soc->getID()) {
+						soc->CheckReceiver(incomeLen);
+						break;
+					}
+				}
+				clsBuffer();
+				break;
+			}
 		}
-		SocketId = tmp[0].toInt();
-		ip = tmp[1];
-		port = atol(tmp[2].c_str());
-		len = tmp[3].toInt();
-		int index = 0;
-		for (int i=0;i<tmp[4].length();i+=2) {
-			buffer[index++] = strtol(tmp[4].substring(i, i + 2).c_str(), 0, 16);
-		}
-		// memcpy(buffer, tmp[4].c_str(), tmp[4].length());
-		callback(SocketId, ip, port, buffer, len);
+		delay(10);
 	}
 }
 

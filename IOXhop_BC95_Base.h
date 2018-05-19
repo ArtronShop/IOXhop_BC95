@@ -7,6 +7,8 @@
 
 class IOXhop_BC95_Base {
 	public:
+		AltSoftSerial *_ser = new AltSoftSerial;
+		
 		IOXhop_BC95_Base() { }
 		
 		void begin() { 
@@ -21,7 +23,6 @@ class IOXhop_BC95_Base {
 		
 		
 	private:
-		AltSoftSerial *_ser = new AltSoftSerial;
 		int _timeout = 500;
 
 }
