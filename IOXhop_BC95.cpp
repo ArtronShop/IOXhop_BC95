@@ -1,3 +1,7 @@
+/* File              : IOXhop_BC95.cpp
+   Codeing By IOXhop : www.ioxhop.com
+   Sonthaya Nongnuch : www.fb.me/maxthai */
+
 #ifndef IOXhop_BC95_CPP
 #define IOXhop_BC95_CPP
 
@@ -138,11 +142,11 @@ void IOXhop_BC95::loop() {
 						break;
 					}
 				}
-				clsBuffer();
+				// clsBuffer();
 				break;
 			}
 		}
-		delay(10);
+		// delay(10);
 	}
 }
 

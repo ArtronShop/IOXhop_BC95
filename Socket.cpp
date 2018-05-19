@@ -1,3 +1,7 @@
+/* File              : Socket.cpp
+   Codeing By IOXhop : www.ioxhop.com
+   Sonthaya Nongnuch : www.fb.me/maxthai */
+
 #ifndef Socket_CPP
 #define Socket_CPP
 

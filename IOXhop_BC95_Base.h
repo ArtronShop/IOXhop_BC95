@@ -1,3 +1,7 @@
+/* File              : IOXhop_BC95_Base.h
+   Codeing By IOXhop : www.ioxhop.com
+   Sonthaya Nongnuch : www.fb.me/maxthai */
+
 #ifndef IOXhop_BC95_Base_H
 #define IOXhop_BC95_Base_H
 

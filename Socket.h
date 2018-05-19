@@ -1,3 +1,7 @@
+/* File              : Socket.h
+   Codeing By IOXhop : www.ioxhop.com
+   Sonthaya Nongnuch : www.fb.me/maxthai */
+
 #ifndef Socket_H
 #define Socket_H
 
@@ -9,6 +13,9 @@ typedef void(*UDPReceiverCallback)(String, unsigned long, byte*, int);
 class Socket {
 	public:
 		Socket(IOXhop_BC95_Base *base, int socketId) : _base(base), _socketId(socketId) {  }
+		~Socket() {
+			this->close();
+		}
 		
 		// 
 		int getID() { return _socketId; }

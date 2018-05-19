@@ -1,3 +1,7 @@
+/* File              : IOXhop_BC95.h
+   Codeing By IOXhop : www.ioxhop.com
+   Sonthaya Nongnuch : www.fb.me/maxthai */
+
 #ifndef IOXhop_BC95_H
 #define IOXhop_BC95_H
 
@@ -5,7 +9,7 @@
 #include "IOXhop_BC95_Base.h"
 #include "Socket.h"
 
-#define DEBUG(...) { Serial.print("[debug] "); Serial.println(__VA_ARGS__); }
+// #define DEBUG(...) { Serial.print("[debug] "); Serial.println(__VA_ARGS__); }
 
 static int SetupCMDLen = 3;
 static String SetupCMD[3] = {
@@ -35,6 +39,7 @@ class IOXhop_BC95 : public IOXhop_BC95_Base {
 		// UDP
 		Socket* CreateUDPSocket(int listen_port) ;
 		void loop() ;
+		void closeAllSocket() ;
 		
 		
 }
