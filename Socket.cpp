@@ -15,7 +15,7 @@ int Socket::send(String ip, unsigned long port, byte *data, int len) {
 	cmd += String(len) + ",";
 	String hexStr;
 	for (int i=0;i<len;i++) {
-		hexStr = String((int)data[i], HEX);
+		hexStr = (data[i] < 0x0F ? "0" : "") + String((int)data[i], HEX);
 		hexStr.toUpperCase();
 		cmd += hexStr;
 	}
